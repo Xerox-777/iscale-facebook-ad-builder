@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useLocation, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, Video, Wand2, Settings, LogOut, Image, ShoppingBag, Target, ChevronLeft, ChevronRight, FileImage, Search, ChevronDown, UserCog } from 'lucide-react';
+import { LayoutDashboard, Package, Users, Video, Wand2, Settings, LogOut, Image, ShoppingBag, Target, ChevronLeft, ChevronRight, FileImage, Search, ChevronDown, UserCog, Key } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 
@@ -173,6 +173,25 @@ export default function Layout() {
                                     : 'text-gray-400 group-hover:text-amber-600'
                             }`} />
                             {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">User Management</span>}
+                        </Link>
+                    )}
+                    {/* Admin Settings - Superuser Only */}
+                    {user?.is_superuser && (
+                        <Link
+                            to="/admin-settings"
+                            className={`flex items-center gap-3 px-4 py-3 w-full rounded-xl transition-colors group ${
+                                location.pathname === '/admin-settings'
+                                    ? 'bg-amber-100 text-amber-900 font-medium shadow-sm'
+                                    : 'text-gray-600 hover:bg-amber-50 hover:text-amber-800'
+                            } ${isCollapsed ? 'justify-center px-2' : ''}`}
+                            title={isCollapsed ? 'Admin Settings' : ''}
+                        >
+                            <Key size={20} className={`flex-shrink-0 ${
+                                location.pathname === '/admin-settings'
+                                    ? 'text-amber-600'
+                                    : 'text-gray-400 group-hover:text-amber-600'
+                            }`} />
+                            {!isCollapsed && <span className="whitespace-nowrap overflow-hidden">Admin Settings</span>}
                         </Link>
                     )}
                     <Link

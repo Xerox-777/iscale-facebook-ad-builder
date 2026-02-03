@@ -34,6 +34,7 @@ import AdRemix from './pages/AdRemix';
 import Settings from './pages/Settings';
 import Login from './pages/Login';
 import UserManagement from './pages/UserManagement';
+import AdminSettings from './pages/AdminSettings';
 
 function App() {
   return (
@@ -76,6 +77,14 @@ function App() {
                     element={
                       <PrivateRoute requiredRole="admin">
                         <UserManagement />
+                      </PrivateRoute>
+                    }
+                  />
+                  <Route
+                    path="admin-settings"
+                    element={
+                      <PrivateRoute requiredRole="superuser">
+                        <AdminSettings />
                       </PrivateRoute>
                     }
                   />

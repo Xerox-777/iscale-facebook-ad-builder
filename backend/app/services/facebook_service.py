@@ -17,15 +17,30 @@ env_path = Path(__file__).resolve().parent.parent.parent.parent / '.env'
 load_dotenv(dotenv_path=env_path)
 
 class FacebookService:
-    def __init__(self):
-        # Try standard names first, then VITE_ prefixed names (common in this project)
-        self.access_token = os.getenv("FACEBOOK_ACCESS_TOKEN") or os.getenv("VITE_FACEBOOK_ACCESS_TOKEN")
-        self.ad_account_id = os.getenv("FACEBOOK_AD_ACCOUNT_ID") or os.getenv("VITE_FACEBOOK_AD_ACCOUNT_ID")
-        self.app_id = os.getenv("FACEBOOK_APP_ID") or os.getenv("VITE_FACEBOOK_APP_ID")
-        self.app_secret = os.getenv("FACEBOOK_APP_SECRET") or os.getenv("VITE_FACEBOOK_APP_SECRET")
+    def __init__(
+        self,
+        access_token: str = None,
+        ad_account_id: str = None,
+        app_id: str = None,
+        app_secret: str = None
+    ):
+        """
+        Initialize FacebookService with optional credentials.
+
+        Args:
+            access_token: Facebook access token (falls back to env var)
+            ad_account_id: Facebook ad account ID (falls back to env var)
+            app_id: Facebook app ID (falls back to env var)
+            app_secret: Facebook app secret (falls back to env var)
+        """
+        # Use provided credentials or fall back to env vars
+        self.access_token = access_token or os.getenv("FACEBOOK_ACCESS_TOKEN") or os.getenv("VITE_FACEBOOK_ACCESS_TOKEN")
+        self.ad_account_id = ad_account_id or os.getenv("FACEBOOK_AD_ACCOUNT_ID") or os.getenv("VITE_FACEBOOK_AD_ACCOUNT_ID")
+        self.app_id = app_id or os.getenv("FACEBOOK_APP_ID") or os.getenv("VITE_FACEBOOK_APP_ID")
+        self.app_secret = app_secret or os.getenv("FACEBOOK_APP_SECRET") or os.getenv("VITE_FACEBOOK_APP_SECRET")
         self.api = None
         self.account = None
-        
+
         if self.access_token and self.ad_account_id:
             self.initialize()
 

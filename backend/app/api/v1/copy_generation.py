@@ -1,16 +1,29 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import google.generativeai as genai
+from sqlalchemy.orm import Session
 import os
 import json
 
+from app.database import get_db
+from app.models import User
+from app.core.deps import get_current_active_user
+from app.services.credential_service import credential_service
+
 router = APIRouter()
 
-# Configure Gemini
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
-if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+# Default Gemini API key from environment
+DEFAULT_GEMINI_API_KEY = os.getenv("GEMINI_API_KEY") or os.getenv("VITE_GEMINI_API_KEY")
+
+
+def get_gemini_api_key(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> str:
+    """Get user's Gemini API key or fall back to environment variable."""
+    user_key = credential_service.get_user_gemini_key(db, current_user)
+    return user_key or DEFAULT_GEMINI_API_KEY
 
 class CopyGenerationRequest(BaseModel):
     brand: Dict[str, Any]
@@ -31,12 +44,18 @@ class FieldRegenerationRequest(BaseModel):
     campaignDetails: Dict[str, str]
 
 @router.post("/generate")
-async def generate_copy(request: CopyGenerationRequest):
+async def generate_copy(
+    request: CopyGenerationRequest,
+    api_key: str = Depends(get_gemini_api_key)
+):
     """Generate ad copy variations using Gemini AI"""
-    
-    if not GEMINI_API_KEY:
+
+    if not api_key:
         raise HTTPException(status_code=500, detail="Gemini API key not configured")
-    
+
+    # Configure Gemini with user's key (or default)
+    genai.configure(api_key=api_key)
+
     try:
         # Build the prompt
         count = request.variationCount
@@ -131,12 +150,18 @@ Return ONLY valid JSON in this exact format:
         raise HTTPException(status_code=500, detail=f"Copy generation failed: {str(e)}")
 
 @router.post("/regenerate-field")
-async def regenerate_field(request: FieldRegenerationRequest):
+async def regenerate_field(
+    request: FieldRegenerationRequest,
+    api_key: str = Depends(get_gemini_api_key)
+):
     """Regenerate a specific field (headline, body, or cta)"""
-    
-    if not GEMINI_API_KEY:
+
+    if not api_key:
         raise HTTPException(status_code=500, detail="Gemini API key not configured")
-    
+
+    # Configure Gemini with user's key (or default)
+    genai.configure(api_key=api_key)
+
     try:
         field_prompts = {
             "headline": "Generate a new headline (under 40 characters)",

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from typing import Dict, Any, Optional
 from app.services.facebook_service import FacebookService
+from app.services.credential_service import credential_service
 from app.models import FacebookAd, FacebookAdSet, FacebookCampaign, User
 from app.database import get_db
 from app.core.deps import get_current_active_user, require_permission
@@ -8,7 +9,41 @@ from sqlalchemy.orm import Session
 
 router = APIRouter()
 
+
+def get_facebook_service_for_user(
+    current_user: User = Depends(get_current_active_user),
+    db: Session = Depends(get_db)
+) -> FacebookService:
+    """
+    Get FacebookService initialized with user's credentials if available,
+    otherwise falls back to environment variables.
+    """
+    # Try to get user's credentials
+    creds = credential_service.get_user_facebook_credentials(db, current_user)
+
+    if creds:
+        access_token, ad_account_id, app_id, app_secret = creds
+        service = FacebookService(
+            access_token=access_token,
+            ad_account_id=ad_account_id,
+            app_id=app_id,
+            app_secret=app_secret
+        )
+    else:
+        # Fall back to env vars
+        service = FacebookService()
+
+    try:
+        if not service.api:
+            service.initialize()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    return service
+
+
 def get_facebook_service():
+    """Legacy function - use get_facebook_service_for_user for authenticated endpoints."""
     service = FacebookService()
     try:
         if not service.api:
@@ -19,8 +54,7 @@ def get_facebook_service():
 
 @router.get("/accounts")
 def get_ad_accounts(
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         return service.get_ad_accounts()
@@ -30,8 +64,7 @@ def get_ad_accounts(
 @router.get("/campaigns")
 def read_campaigns(
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         campaigns = service.get_campaigns(ad_account_id)
@@ -44,7 +77,7 @@ def read_campaigns(
 def create_campaign(
     campaign: Dict[str, Any],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     try:
@@ -58,8 +91,7 @@ def create_campaign(
 @router.get("/pixels")
 def read_pixels(
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         pixels = service.get_pixels(ad_account_id)
@@ -70,8 +102,7 @@ def read_pixels(
 
 @router.get("/pages")
 def read_pages(
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         pages = service.get_pages()
@@ -84,8 +115,7 @@ def read_pages(
 def read_adsets(
     ad_account_id: Optional[str] = None,
     campaign_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         adsets = service.get_adsets(ad_account_id, campaign_id)
@@ -97,7 +127,7 @@ def read_adsets(
 def create_adset(
     adset: Dict[str, Any],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     try:
@@ -110,7 +140,7 @@ def create_adset(
 def create_creative(
     creative: Dict[str, Any],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     try:
@@ -123,7 +153,7 @@ def create_creative(
 def create_ad(
     ad: Dict[str, Any],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     try:
@@ -135,8 +165,7 @@ def create_ad(
 @router.get("/ads")
 def read_ads(
     adset_id: str,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         ads = service.get_ads(adset_id)
@@ -274,7 +303,7 @@ def save_ad_locally(
 def upload_image(
     data: Dict[str, str],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     try:
@@ -290,7 +319,7 @@ def upload_image(
 def upload_video(
     data: Dict[str, Any],
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
+    service: FacebookService = Depends(get_facebook_service_for_user),
     current_user: User = Depends(require_permission("campaigns:write"))
 ):
     """Upload a video to Facebook Ad Library.
@@ -328,8 +357,7 @@ def upload_video(
 @router.get("/video-status/{video_id}")
 def get_video_status(
     video_id: str,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     """Check the processing status of a video.
 
@@ -346,8 +374,7 @@ def get_video_status(
 @router.get("/video-thumbnails/{video_id}")
 def get_video_thumbnails(
     video_id: str,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     """Get auto-generated thumbnails for a video.
 
@@ -366,8 +393,7 @@ def search_locations(
     type: str = "city",
     limit: int = 10,
     ad_account_id: Optional[str] = None,
-    service: FacebookService = Depends(get_facebook_service),
-    current_user: User = Depends(get_current_active_user)
+    service: FacebookService = Depends(get_facebook_service_for_user)
 ):
     try:
         locations = service.search_locations(q, type, limit, ad_account_id)

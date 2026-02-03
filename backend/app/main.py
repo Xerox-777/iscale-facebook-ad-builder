@@ -85,18 +85,18 @@ async def startup_event():
         with engine.connect() as conn:
             result = conn.execute(text("SELECT version()"))
             version = result.scalar()
-            print(f"✅ Connected to PostgreSQL")
-            print(f"   Version: {version}")
+            print(f"[OK] Connected to PostgreSQL")
+            print(f"     Version: {version}")
     except Exception as e:
         # Sanitize DATABASE_URL - hide password
         sanitized_url = re.sub(r'://[^:]+:[^@]+@', '://***:***@', settings.DATABASE_URL)
-        print(f"❌ Failed to connect to database: {e}")
+        print(f"[ERROR] Failed to connect to database: {e}")
         print(f"   DATABASE_URL: {sanitized_url}")
         raise RuntimeError(f"Database connection failed: {e}")
 
 
 # Include Routers
-from app.api.v1 import brands, products, research, generated_ads, templates, facebook, uploads, dashboard, copy_generation, profiles, ad_remix, prompts, ad_styles, auth, users
+from app.api.v1 import brands, products, research, generated_ads, templates, facebook, uploads, dashboard, copy_generation, profiles, ad_remix, prompts, ad_styles, auth, users, credentials
 
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
@@ -113,6 +113,7 @@ app.include_router(profiles.router, prefix="/api/v1/profiles", tags=["profiles"]
 app.include_router(ad_remix.router, prefix="/api/v1/ad-remix", tags=["ad-remix"])
 app.include_router(prompts.router, prefix="/api/v1/prompts", tags=["prompts"])
 app.include_router(ad_styles.router, prefix="/api/v1/ad-styles", tags=["ad-styles"])
+app.include_router(credentials.router, prefix="/api/v1/credentials", tags=["credentials"])
 
 # Mount static files for uploads
 import os

@@ -257,6 +257,11 @@ export const AuthProvider = ({ children }) => {
     // Check if user has a specific role
     const hasRole = useCallback((roleName) => {
         if (!user) return false;
+        // Special case for superuser check
+        if (roleName === 'superuser') {
+            return user.is_superuser === true;
+        }
+        // Superusers have all roles
         if (user.is_superuser) return true;
         return user.roles?.some(role => role.name === roleName) || false;
     }, [user]);

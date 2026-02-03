@@ -48,6 +48,8 @@ class User(Base):
 
     roles = relationship("Role", secondary=user_roles, back_populates="users")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
+    facebook_credentials = relationship("FacebookCredential", back_populates="user", cascade="all, delete-orphan")
+    gemini_credentials = relationship("GeminiCredential", back_populates="user", cascade="all, delete-orphan")
 
     def has_permission(self, permission_name: str) -> bool:
         """Check if user has a specific permission through any of their roles"""
@@ -478,3 +480,38 @@ class BrandScrapedAd(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     brand_scrape = relationship("BrandScrape", back_populates="ads")
+
+
+class FacebookCredential(Base):
+    """Stores encrypted Facebook API credentials for users."""
+    __tablename__ = "facebook_credentials"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)  # Friendly name
+    access_token_encrypted = Column(Text, nullable=False)
+    ad_account_id = Column(String, nullable=False)
+    app_id = Column(String, nullable=True)
+    app_secret_encrypted = Column(Text, nullable=True)
+    is_default = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="facebook_credentials")
+
+
+class GeminiCredential(Base):
+    """Stores encrypted Gemini API credentials for users."""
+    __tablename__ = "gemini_credentials"
+
+    id = Column(String, primary_key=True, default=generate_uuid)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)  # Friendly name
+    api_key_encrypted = Column(Text, nullable=False)
+    is_default = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    user = relationship("User", back_populates="gemini_credentials")

@@ -3,7 +3,15 @@ from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 
 # PostgreSQL only - SQLite is no longer supported
-engine = create_engine(settings.DATABASE_URL)
+# pool_pre_ping: check connection is alive before using (handles Railway timeouts)
+# pool_recycle: recycle connections after 5 minutes to avoid stale connections
+engine = create_engine(
+    settings.DATABASE_URL,
+    pool_pre_ping=True,
+    pool_recycle=300,
+    pool_size=5,
+    max_overflow=10
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

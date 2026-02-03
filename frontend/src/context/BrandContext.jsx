@@ -73,51 +73,52 @@ export const BrandProvider = ({ children }) => {
 
     // Brand Management
     const addBrand = async (brand) => {
-        try {
-            const newBrand = {
-                ...brand,
-                id: crypto.randomUUID()
-            };
+        const newBrand = {
+            ...brand,
+            id: crypto.randomUUID()
+        };
 
-            await authFetch(`${API_URL}/brands`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newBrand)
-            });
+        const response = await authFetch(`${API_URL}/brands`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newBrand)
+        });
 
-            await loadData();
-        } catch (error) {
-            console.error('Error adding brand:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to create brand (${response.status})`);
         }
+
+        await loadData();
+        return await response.json();
     };
 
     const updateBrand = async (id, updatedBrand) => {
-        try {
-            await authFetch(`${API_URL}/brands/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedBrand)
-            });
+        const response = await authFetch(`${API_URL}/brands/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedBrand)
+        });
 
-            await loadData();
-        } catch (error) {
-            console.error('Error updating brand:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to update brand (${response.status})`);
         }
+
+        await loadData();
     };
 
     const deleteBrand = async (id) => {
-        try {
-            await authFetch(`${API_URL}/brands/${id}`, {
-                method: 'DELETE'
-            });
+        const response = await authFetch(`${API_URL}/brands/${id}`, {
+            method: 'DELETE'
+        });
 
-            await loadData();
-        } catch (error) {
-            console.error('Error deleting brand:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to delete brand (${response.status})`);
         }
+
+        await loadData();
     };
 
     // Product Management (standalone - kept for compatibility)
@@ -174,52 +175,52 @@ export const BrandProvider = ({ children }) => {
 
     // Customer Profile Management
     const addProfile = async (profile) => {
-        try {
-            const newProfile = {
-                ...profile,
-                id: crypto.randomUUID()
-            };
+        const newProfile = {
+            ...profile,
+            id: crypto.randomUUID()
+        };
 
-            await authFetch(`${API_URL}/profiles`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newProfile)
-            });
+        const response = await authFetch(`${API_URL}/profiles`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newProfile)
+        });
 
-            await loadData();
-            return newProfile;
-        } catch (error) {
-            console.error('Error adding profile:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to create profile (${response.status})`);
         }
+
+        await loadData();
+        return newProfile;
     };
 
     const updateProfile = async (id, updatedProfile) => {
-        try {
-            await authFetch(`${API_URL}/profiles/${id}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(updatedProfile)
-            });
+        const response = await authFetch(`${API_URL}/profiles/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedProfile)
+        });
 
-            await loadData();
-        } catch (error) {
-            console.error('Error updating profile:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to update profile (${response.status})`);
         }
+
+        await loadData();
     };
 
     const deleteProfile = async (id) => {
-        try {
-            await authFetch(`${API_URL}/profiles/${id}`, {
-                method: 'DELETE'
-            });
+        const response = await authFetch(`${API_URL}/profiles/${id}`, {
+            method: 'DELETE'
+        });
 
-            await loadData();
-        } catch (error) {
-            console.error('Error deleting profile:', error);
-            throw error;
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail || `Failed to delete profile (${response.status})`);
         }
+
+        await loadData();
     };
 
     // Profile-Brand linking (handled in brand update)

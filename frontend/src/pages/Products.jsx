@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { useBrands } from '../context/BrandContext';
+import { useToast } from '../context/ToastContext';
 import ProductForm from '../components/ProductForm';
 import { Plus, Edit2, Trash2, Package, LayoutGrid, List, Search } from 'lucide-react';
 import ConfirmationModal from '../components/ConfirmationModal';
 
 const Products = () => {
     const { brands, addProduct, updateProduct, deleteProduct } = useBrands();
+    const { showSuccess, showError } = useToast();
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
     const [viewMode, setViewMode] = useState(localStorage.getItem('preferred_view_mode') || 'list');
@@ -33,14 +35,20 @@ const Products = () => {
         product.brandName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
-    const handleSave = (productData) => {
-        if (editingProduct) {
-            updateProduct(productData.brandId, editingProduct.id, productData);
-        } else {
-            addProduct(productData.brandId, productData);
+    const handleSave = async (productData) => {
+        try {
+            if (editingProduct) {
+                await updateProduct(productData.brandId, editingProduct.id, productData);
+                showSuccess('Product updated successfully');
+            } else {
+                await addProduct(productData.brandId, productData);
+                showSuccess('Product created successfully');
+            }
+            setIsFormOpen(false);
+            setEditingProduct(null);
+        } catch (error) {
+            showError(error.message || 'Failed to save product');
         }
-        setIsFormOpen(false);
-        setEditingProduct(null);
     };
 
     const handleEdit = (product) => {
@@ -52,9 +60,14 @@ const Products = () => {
         setProductToDelete({ brandId, productId });
     };
 
-    const confirmDelete = () => {
+    const confirmDelete = async () => {
         if (productToDelete) {
-            deleteProduct(productToDelete.brandId, productToDelete.productId);
+            try {
+                await deleteProduct(productToDelete.brandId, productToDelete.productId);
+                showSuccess('Product deleted successfully');
+            } catch (error) {
+                showError(error.message || 'Failed to delete product');
+            }
             setProductToDelete(null);
         }
     };
